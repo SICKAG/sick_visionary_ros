@@ -1,0 +1,4 @@
+[submodule "sick_visionary_cpp_shared"]
+	path = sick_visionary_cpp_shared
+	url = ../sick_visionary_cpp_shared.git
+	branch = main
