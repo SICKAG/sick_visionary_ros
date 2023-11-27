@@ -140,7 +140,7 @@ void publishCameraInfo(std_msgs::Header header, VisionaryTMiniData& dataHandler)
   ci.P[6]  = dataHandler.getCameraParameters().cy;
 
   gPubCameraInfo.publish(ci);
-  gPubCameraInfo_freq->tick();
+  gPubCameraInfo_freq->tick(header.stamp);
 }
 
 void publishDepth(std_msgs::Header header, VisionaryTMiniData& dataHandler)
@@ -153,7 +153,7 @@ void publishDepth(std_msgs::Header header, VisionaryTMiniData& dataHandler)
 
   msg->header = header;
   gPubDepth.publish(msg);
-  gPubDepth_freq->tick();
+  gPubDepth_freq->tick(header.stamp);
 }
 
 void publishIntensity(std_msgs::Header header, VisionaryTMiniData& dataHandler)
@@ -166,7 +166,7 @@ void publishIntensity(std_msgs::Header header, VisionaryTMiniData& dataHandler)
 
   msg->header = header;
   gPubIntensity.publish(msg);
-  gPubIntensity_freq->tick();
+  gPubIntensity_freq->tick(header.stamp);
 }
 
 void publishStateMap(std_msgs::Header header, VisionaryTMiniData& dataHandler)
@@ -179,7 +179,7 @@ void publishStateMap(std_msgs::Header header, VisionaryTMiniData& dataHandler)
 
   msg->header = header;
   gPubState.publish(msg);
-  gPubState_freq->tick();
+  gPubState_freq->tick(header.stamp);
 }
 
 void publishPointCloud(std_msgs::Header header, VisionaryTMiniData& dataHandler)
@@ -232,6 +232,7 @@ void publishPointCloud(std_msgs::Header header, VisionaryTMiniData& dataHandler)
     memcpy(&cloudMsg->data[index * cloudMsg->point_step + cloudMsg->fields[3].offset], &*itIntens, sizeof(uint16_t));
   }
   gPubPoints.publish(cloudMsg);
+  gPubPoints_freq->tick(header.stamp);
 }
 
 void publish_frame(VisionaryTMiniData& dataHandler)
