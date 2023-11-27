@@ -6,6 +6,7 @@ project(sick_visionary_ros
 
 find_package(catkin REQUIRED COMPONENTS
   cv_bridge
+  diagnostic_updater
   pcl_conversions
   pcl_ros
   image_transport

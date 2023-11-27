@@ -14,6 +14,9 @@
 #include <std_msgs/ByteMultiArray.h>
 #include <memory>
 
+#include <diagnostic_updater/diagnostic_updater.h>
+#include <diagnostic_updater/publisher.h>
+
 #include "VisionaryControl.h"
 #include "VisionaryDataStream.h"
 #include "VisionaryTMiniData.h" // Header specific for the Time of Flight data
@@ -27,10 +30,19 @@ std::shared_ptr<VisionaryTMiniData> gDataHandler;
 image_transport::Publisher gPubDepth, gPubIntensity, gPubState;
 ros::Publisher             gPubCameraInfo, gPubPoints, gPubCart, gPubScan;
 
+diagnostic_updater::Updater updater;
+
 std::string gFrameId;
 
 boost::mutex gDataMtx;
 bool         gReceive = true;
+
+void driver_diagnostics(diagnostic_updater::DiagnosticStatusWrapper &stat)
+{
+    stat.summary(diagnostic_msgs::DiagnosticStatus::OK, "driver running");
+    stat.add("frame_id", gFrameId);
+    stat.add("device_ident", gControl->getDeviceIdent());
+}
 
 void publishCameraInfo(std_msgs::Header header, VisionaryTMiniData& dataHandler)
 {
@@ -297,6 +309,10 @@ int main(int argc, char** argv)
                            1,
                            (image_transport::SubscriberStatusCallback)on_new_subscriber_it,
                            image_transport::SubscriberStatusCallback());
+
+  //diagnostics
+  updater.setHardwareID(nh.getNamespace());
+  updater.add("driver", driver_diagnostics);
 
   // start receiver thread for camera images
   boost::thread rec_thr(boost::bind(&thr_receive_frame, pDataStream, pDataHandler));
