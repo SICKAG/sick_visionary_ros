@@ -397,17 +397,16 @@ int main(int argc, char** argv)
   gPubState_freq.reset(new diagnostic_updater::TopicDiagnostic("statemap", *updater, diagnostic_updater::FrequencyStatusParam(&min_freq, &max_freq, tolerance, window_size),
                                                                                      diagnostic_updater::TimeStampStatusParam(min_acceptable, max_acceptable)));
 
-  gPubCameraInfo_numSub.reset(new diagnostic_updater::FunctionDiagnosticTask("camera_info_num_sub", boost::bind(&camera_info_num_sub_diag, boost::placeholders::_1)));
-  gPubCameraInfo_numSub.reset(new diagnostic_updater::FunctionDiagnosticTask("camera_info_num_sub", boost::bind(&camera_info_num_sub_diag, boost::placeholders::_1)));
-  gPubCameraInfo_numSub.reset(new diagnostic_updater::FunctionDiagnosticTask("camera_info_num_sub", boost::bind(&camera_info_num_sub_diag, boost::placeholders::_1)));
-  gPubCameraInfo_numSub.reset(new diagnostic_updater::FunctionDiagnosticTask("camera_info_num_sub", boost::bind(&camera_info_num_sub_diag, boost::placeholders::_1)));
-  gPubCameraInfo_numSub.reset(new diagnostic_updater::FunctionDiagnosticTask("camera_info_num_sub", boost::bind(&camera_info_num_sub_diag, boost::placeholders::_1)));
+  gPubDepth_numSub.reset(new diagnostic_updater::FunctionDiagnosticTask("depth_num_sub", boost::bind(&depth_num_sub_diag, boost::placeholders::_1)));
+  gPubPoints_numSub.reset(new diagnostic_updater::FunctionDiagnosticTask("points_num_sub", boost::bind(&points_num_sub_diag, boost::placeholders::_1)));
+  gPubIntensity_numSub.reset(new diagnostic_updater::FunctionDiagnosticTask("intensity_num_sub", boost::bind(&intensity_num_sub_diag, boost::placeholders::_1)));
+  gPubState_numSub.reset(new diagnostic_updater::FunctionDiagnosticTask("statemap_num_sub", boost::bind(&statemap_num_sub_diag, boost::placeholders::_1)));
 
-  // gPubCameraInfo_freq->addTask(gPubCameraInfo_numSub.get());
-  // gPubDepth_freq->addTask(gPubDepth_numSub.get());
-  // gPubPoints_freq->addTask(gPubPoints_numSub.get());
-  // gPubIntensity_freq->addTask(gPubIntensity_numSub.get());
-  // gPubState_freq->addTask(gPubState_numSub.get());
+  gPubCameraInfo_freq->addTask(gPubCameraInfo_numSub.get());
+  gPubDepth_freq->addTask(gPubDepth_numSub.get());
+  gPubPoints_freq->addTask(gPubPoints_numSub.get());
+  gPubIntensity_freq->addTask(gPubIntensity_numSub.get());
+  gPubState_freq->addTask(gPubState_numSub.get());
 
   ros::Timer timer = nh.createTimer(ros::Duration(1.0), diag_timer_cb);
 
