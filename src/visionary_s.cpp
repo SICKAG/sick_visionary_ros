@@ -253,7 +253,7 @@ void on_new_subscriber_it(const image_transport::SingleSubscriberPublisher& pub)
 
 int main(int argc, char** argv)
 {
-  ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug);
+  //ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug);
   ros::init(argc, argv, "sick_visionary_s");
   ros::NodeHandle nh("~");
 
