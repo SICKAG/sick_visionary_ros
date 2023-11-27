@@ -41,9 +41,14 @@ bool         gReceive = true;
 
 void driver_diagnostics(diagnostic_updater::DiagnosticStatusWrapper &stat)
 {
-    stat.summary(diagnostic_msgs::DiagnosticStatus::OK, "driver running");
-    stat.add("frame_id", gFrameId);
-    stat.add("device_ident", gControl->getDeviceIdent());
+  stat.summary(diagnostic_msgs::DiagnosticStatus::OK, "driver running");
+  stat.add("frame_id", gFrameId);
+  stat.add("device_ident", gControl->getDeviceIdent());
+  stat.add("NumSubscriber_camera_info", gPubCameraInfo.getNumSubscribers());
+  stat.add("NumSubscriber_points", gPubPoints.getNumSubscribers());
+  stat.add("NumSubscriber_depth", gPubDepth.getNumSubscribers());
+  stat.add("NumSubscriber_intensity", gPubIntensity.getNumSubscribers());
+  stat.add("NumSubscriber_statemap", gPubState.getNumSubscribers());
 }
 
 void publishCameraInfo(std_msgs::Header header, VisionaryTMiniData& dataHandler)
