@@ -31,6 +31,8 @@ image_transport::Publisher gPubDepth, gPubIntensity, gPubState;
 ros::Publisher             gPubCameraInfo, gPubPoints;
 
 diagnostic_updater::Updater updater;
+std::shared_ptr<diagnostic_updater::TopicDiagnostic> gPubDepth_freq, gPubIntensity_freq, gPubState_freq;
+std::shared_ptr<diagnostic_updater::TopicDiagnostic> gPubCameraInfo_freq, gPubPoints_freq;
 
 std::string gFrameId;
 
@@ -80,6 +82,7 @@ void publishCameraInfo(std_msgs::Header header, VisionaryTMiniData& dataHandler)
   ci.P[6]  = dataHandler.getCameraParameters().cy;
 
   gPubCameraInfo.publish(ci);
+  gPubCameraInfo_freq->tick();
 }
 
 void publishDepth(std_msgs::Header header, VisionaryTMiniData& dataHandler)
@@ -92,6 +95,7 @@ void publishDepth(std_msgs::Header header, VisionaryTMiniData& dataHandler)
 
   msg->header = header;
   gPubDepth.publish(msg);
+  gPubDepth_freq->tick();
 }
 
 void publishIntensity(std_msgs::Header header, VisionaryTMiniData& dataHandler)
@@ -104,6 +108,7 @@ void publishIntensity(std_msgs::Header header, VisionaryTMiniData& dataHandler)
 
   msg->header = header;
   gPubIntensity.publish(msg);
+  gPubIntensity_freq->tick();
 }
 
 void publishStateMap(std_msgs::Header header, VisionaryTMiniData& dataHandler)
@@ -116,6 +121,7 @@ void publishStateMap(std_msgs::Header header, VisionaryTMiniData& dataHandler)
 
   msg->header = header;
   gPubState.publish(msg);
+  gPubState_freq->tick();
 }
 
 void publishPointCloud(std_msgs::Header header, VisionaryTMiniData& dataHandler)
@@ -313,6 +319,23 @@ int main(int argc, char** argv)
   //diagnostics
   updater.setHardwareID(nh.getNamespace());
   updater.add("driver", driver_diagnostics);
+
+  double min_freq = 0.5; // If you update these values, the
+  double max_freq = 2; // HeaderlessTopicDiagnostic will use the new values.
+  double tolerance = 0.1;
+  int window_size = 5;
+  double min_acceptable = -1.0;
+  double max_acceptable = 5.0;
+  gPubCameraInfo_freq.reset(new diagnostic_updater::TopicDiagnostic("camera_info", updater, diagnostic_updater::FrequencyStatusParam(&min_freq, &max_freq, tolerance, window_size),
+                                                                                            diagnostic_updater::TimeStampStatusParam(min_acceptable, max_acceptable)));
+  gPubDepth_freq.reset(new diagnostic_updater::TopicDiagnostic("depth", updater, diagnostic_updater::FrequencyStatusParam(&min_freq, &max_freq, tolerance, window_size),
+                                                                                 diagnostic_updater::TimeStampStatusParam(min_acceptable, max_acceptable)));
+  gPubPoints_freq.reset(new diagnostic_updater::TopicDiagnostic("points", updater, diagnostic_updater::FrequencyStatusParam(&min_freq, &max_freq, tolerance, window_size),
+                                                                                   diagnostic_updater::TimeStampStatusParam(min_acceptable, max_acceptable)));
+  gPubIntensity_freq.reset(new diagnostic_updater::TopicDiagnostic("intensity", updater, diagnostic_updater::FrequencyStatusParam(&min_freq, &max_freq, tolerance, window_size),
+                                                                                         diagnostic_updater::TimeStampStatusParam(min_acceptable, max_acceptable)));
+  gPubState_freq.reset(new diagnostic_updater::TopicDiagnostic("statemap", updater, diagnostic_updater::FrequencyStatusParam(&min_freq, &max_freq, tolerance, window_size),
+                                                                                    diagnostic_updater::TimeStampStatusParam(min_acceptable, max_acceptable)));
 
   // start receiver thread for camera images
   boost::thread rec_thr(boost::bind(&thr_receive_frame, pDataStream, pDataHandler));
