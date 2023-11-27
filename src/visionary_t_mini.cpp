@@ -28,7 +28,7 @@ std::shared_ptr<VisionaryControl> gControl;
 std::shared_ptr<VisionaryTMiniData> gDataHandler;
 
 image_transport::Publisher gPubDepth, gPubIntensity, gPubState;
-ros::Publisher             gPubCameraInfo, gPubPoints, gPubCart, gPubScan;
+ros::Publisher             gPubCameraInfo, gPubPoints;
 
 diagnostic_updater::Updater updater;
 
