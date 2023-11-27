@@ -44,9 +44,22 @@ std::string gCameraInfoTopic, gPointsTopic, gDepthTopic, gIntensityTopic, gState
 boost::mutex gDataMtx;
 bool         gReceive = true;
 
+ros::Timer gFakeTicksTimer;
+int gNumSubs = 0;
+
 void diag_timer_cb(const ros::TimerEvent&)
 {
   updater->update();
+}
+
+void fake_ticks_timer_cb(const ros::TimerEvent&)
+{
+  ros::Time now = ros::Time::now();
+  gPubCameraInfo_freq->tick(now);
+  gPubDepth_freq->tick(now);
+  gPubIntensity_freq->tick(now);
+  gPubState_freq->tick(now);
+  gPubPoints_freq->tick(now);
 }
 
 void driver_diagnostics(diagnostic_updater::DiagnosticStatusWrapper &stat)
@@ -60,9 +73,9 @@ void camera_info_num_sub_diag(diagnostic_updater::DiagnosticStatusWrapper &stat)
 {
   int numSubscribers = gPubCameraInfo.getNumSubscribers();
   if (numSubscribers > 0)
-    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gCameraInfoTopic + " is subscribed");
+    stat.summary(diagnostic_msgs::DiagnosticStatus::OK, gCameraInfoTopic + " is subscribed");
   else
-    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gCameraInfoTopic + " is not subscribed");
+    stat.summary(diagnostic_msgs::DiagnosticStatus::OK, gCameraInfoTopic + " is not subscribed");
 
   stat.add("NumSubscribers", numSubscribers);
 }
@@ -71,42 +84,42 @@ void points_num_sub_diag(diagnostic_updater::DiagnosticStatusWrapper &stat)
 {
   int numSubscribers = gPubPoints.getNumSubscribers();
   if (numSubscribers > 0)
-    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gPointsTopic + " is subscribed");
+    stat.summary(diagnostic_msgs::DiagnosticStatus::OK, gPointsTopic + " is subscribed");
   else
-    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gPointsTopic + " is not subscribed");
+    stat.summary(diagnostic_msgs::DiagnosticStatus::OK, gPointsTopic + " is not subscribed");
 
   stat.add("NumSubscribers", numSubscribers);
 }
 
 void depth_num_sub_diag(diagnostic_updater::DiagnosticStatusWrapper &stat)
 {
-  int numSubscribers = gPubPoints.getNumSubscribers();
+  int numSubscribers = gPubDepth.getNumSubscribers();
   if (numSubscribers > 0)
-    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gDepthTopic + " is subscribed");
+    stat.summary(diagnostic_msgs::DiagnosticStatus::OK, gDepthTopic + " is subscribed");
   else
-    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gDepthTopic + " is not subscribed");
+    stat.summary(diagnostic_msgs::DiagnosticStatus::OK, gDepthTopic + " is not subscribed");
 
   stat.add("NumSubscribers", numSubscribers);
 }
 
 void intensity_num_sub_diag(diagnostic_updater::DiagnosticStatusWrapper &stat)
 {
-  int numSubscribers = gPubPoints.getNumSubscribers();
+  int numSubscribers = gPubIntensity.getNumSubscribers();
   if (numSubscribers > 0)
-    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gIntensityTopic + " is subscribed");
+    stat.summary(diagnostic_msgs::DiagnosticStatus::OK, gIntensityTopic + " is subscribed");
   else
-    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gIntensityTopic + " is not subscribed");
+    stat.summary(diagnostic_msgs::DiagnosticStatus::OK, gIntensityTopic + " is not subscribed");
 
   stat.add("NumSubscribers", numSubscribers);
 }
 
 void statemap_num_sub_diag(diagnostic_updater::DiagnosticStatusWrapper &stat)
 {
-  int numSubscribers = gPubPoints.getNumSubscribers();
+  int numSubscribers = gPubState.getNumSubscribers();
   if (numSubscribers > 0)
-    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gStateTopic + " is subscribed");
+    stat.summary(diagnostic_msgs::DiagnosticStatus::OK, gStateTopic + " is subscribed");
   else
-    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gStateTopic + " is not subscribed");
+    stat.summary(diagnostic_msgs::DiagnosticStatus::OK, gStateTopic + " is not subscribed");
 
   stat.add("NumSubscribers", numSubscribers);
 }
@@ -317,19 +330,36 @@ void thr_receive_frame(std::shared_ptr<VisionaryDataStream> pDataStream,
 
 void _on_new_subscriber()
 {
-  ROS_DEBUG("Got new subscriber");
+  gNumSubs++;
+  ROS_DEBUG_STREAM("Got new subscriber, total amount of subscribers: " << gNumSubs);
+  if (gNumSubs != 0) gFakeTicksTimer.stop();
   if (gControl)
     gControl->startAcquisition();
 }
 
-void on_new_subscriber_ros(const ros::SingleSubscriberPublisher&)
+void _on_subscriber_disconnected()
+{
+  gNumSubs--;
+  ROS_DEBUG_STREAM("Subscriber disconnected, total amount of subscribers: " << gNumSubs);
+  if (gNumSubs == 0) gFakeTicksTimer.start();
+}
+
+void on_new_subscriber_ros(const ros::SingleSubscriberPublisher& pub)
 {
   _on_new_subscriber();
 }
 
-void on_new_subscriber_it(const image_transport::SingleSubscriberPublisher&)
+void on_new_subscriber_it(const image_transport::SingleSubscriberPublisher& pub)
 {
   _on_new_subscriber();
+}
+
+void on_subscriber_disconnected_ros(const ros::SingleSubscriberPublisher& pub) {
+    _on_subscriber_disconnected();
+}
+
+void on_subscriber_disconnected_it(const image_transport::SingleSubscriberPublisher& pub) {
+    _on_subscriber_disconnected();
 }
 
 int main(int argc, char** argv)
@@ -370,21 +400,21 @@ int main(int argc, char** argv)
   // make me public (after init.)
   image_transport::ImageTransport it(nh);
   gPubCameraInfo = nh.advertise<sensor_msgs::CameraInfo>(
-    "camera_info", 1, (ros::SubscriberStatusCallback)on_new_subscriber_ros, ros::SubscriberStatusCallback());
+    "camera_info", 1, (ros::SubscriberStatusCallback)on_new_subscriber_ros, (ros::SubscriberStatusCallback)on_subscriber_disconnected_ros);
   gPubDepth  = it.advertise("depth",
                            1,
                            (image_transport::SubscriberStatusCallback)on_new_subscriber_it,
-                           image_transport::SubscriberStatusCallback());
+                           (image_transport::SubscriberStatusCallback)on_subscriber_disconnected_it);
   gPubPoints = nh.advertise<sensor_msgs::PointCloud2>(
-    "points", 2, (ros::SubscriberStatusCallback)on_new_subscriber_ros, ros::SubscriberStatusCallback());
+    "points", 2, (ros::SubscriberStatusCallback)on_new_subscriber_ros, (ros::SubscriberStatusCallback)on_subscriber_disconnected_ros);
   gPubIntensity = it.advertise("intensity",
                                1,
                                (image_transport::SubscriberStatusCallback)on_new_subscriber_it,
-                               image_transport::SubscriberStatusCallback());
+                               (image_transport::SubscriberStatusCallback)on_subscriber_disconnected_it);
   gPubState     = it.advertise("statemap",
                            1,
                            (image_transport::SubscriberStatusCallback)on_new_subscriber_it,
-                           image_transport::SubscriberStatusCallback());
+                           (image_transport::SubscriberStatusCallback)on_subscriber_disconnected_it);
 
   gDeviceIdent = gControl->getDeviceIdent();
   gCameraInfoTopic = gPubCameraInfo.getTopic();
@@ -430,6 +460,7 @@ int main(int argc, char** argv)
   gPubState_freq->addTask(gPubState_numSub.get());
 
   ros::Timer timer = nh.createTimer(ros::Duration(1.0), diag_timer_cb);
+  gFakeTicksTimer = nh.createTimer(ros::Duration(1.0 / desired_freq), fake_ticks_timer_cb);
 
   // start receiver thread for camera images
   boost::thread rec_thr(boost::bind(&thr_receive_frame, pDataStream, pDataHandler));
