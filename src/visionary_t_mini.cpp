@@ -246,12 +246,12 @@ void _on_new_subscriber()
     gControl->startAcquisition();
 }
 
-void on_new_subscriber_ros(const ros::SingleSubscriberPublisher& pub)
+void on_new_subscriber_ros(const ros::SingleSubscriberPublisher&)
 {
   _on_new_subscriber();
 }
 
-void on_new_subscriber_it(const image_transport::SingleSubscriberPublisher& pub)
+void on_new_subscriber_it(const image_transport::SingleSubscriberPublisher&)
 {
   _on_new_subscriber();
 }
