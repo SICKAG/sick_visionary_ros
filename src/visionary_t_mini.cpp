@@ -403,11 +403,11 @@ int main(int argc, char** argv)
   gPubCameraInfo_numSub.reset(new diagnostic_updater::FunctionDiagnosticTask("camera_info_num_sub", boost::bind(&camera_info_num_sub_diag, boost::placeholders::_1)));
   gPubCameraInfo_numSub.reset(new diagnostic_updater::FunctionDiagnosticTask("camera_info_num_sub", boost::bind(&camera_info_num_sub_diag, boost::placeholders::_1)));
 
-  gPubCameraInfo_freq->addTask(gPubCameraInfo_numSub.get());
-  gPubDepth_freq->addTask(gPubDepth_numSub.get());
-  gPubPoints_freq->addTask(gPubPoints_numSub.get());
-  gPubIntensity_freq->addTask(gPubIntensity_numSub.get());
-  gPubState_freq->addTask(gPubState_numSub.get());
+  // gPubCameraInfo_freq->addTask(gPubCameraInfo_numSub.get());
+  // gPubDepth_freq->addTask(gPubDepth_numSub.get());
+  // gPubPoints_freq->addTask(gPubPoints_numSub.get());
+  // gPubIntensity_freq->addTask(gPubIntensity_numSub.get());
+  // gPubState_freq->addTask(gPubState_numSub.get());
 
   ros::Timer timer = nh.createTimer(ros::Duration(1.0), diag_timer_cb);
 
