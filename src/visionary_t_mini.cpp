@@ -38,6 +38,8 @@ std::shared_ptr<diagnostic_updater::FunctionDiagnosticTask> gPubDepth_numSub, gP
 std::shared_ptr<diagnostic_updater::FunctionDiagnosticTask> gPubCameraInfo_numSub, gPubPoints_numSub;
 
 std::string gFrameId;
+std::string gDeviceIdent;
+std::string gCameraInfoTopic, gPointsTopic, gDepthTopic, gIntensityTopic, gStateTopic;
 
 boost::mutex gDataMtx;
 bool         gReceive = true;
@@ -51,57 +53,62 @@ void driver_diagnostics(diagnostic_updater::DiagnosticStatusWrapper &stat)
 {
   stat.summary(diagnostic_msgs::DiagnosticStatus::OK, "driver running");
   stat.add("frame_id", gFrameId);
-  stat.add("device_ident", gControl->getDeviceIdent());
+  stat.add("device_ident", gDeviceIdent);
 }
 
 void camera_info_num_sub_diag(diagnostic_updater::DiagnosticStatusWrapper &stat)
 {
-  if (gPubCameraInfo.getNumSubscribers() > 0)
-    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gPubCameraInfo.getTopic()+" is subscribed");
+  int numSubscribers = gPubCameraInfo.getNumSubscribers();
+  if (numSubscribers > 0)
+    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gCameraInfoTopic + " is subscribed");
   else
-    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gPubCameraInfo.getTopic()+" is not subscribed");
+    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gCameraInfoTopic + " is not subscribed");
 
-  stat.add("NumSubscriber", gPubCameraInfo.getNumSubscribers());
+  stat.add("NumSubscribers", numSubscribers);
 }
 
 void points_num_sub_diag(diagnostic_updater::DiagnosticStatusWrapper &stat)
 {
-  if (gPubPoints.getNumSubscribers() > 0)
-    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gPubPoints.getTopic()+" is subscribed");
+  int numSubscribers = gPubPoints.getNumSubscribers();
+  if (numSubscribers > 0)
+    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gPointsTopic + " is subscribed");
   else
-    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gPubPoints.getTopic()+" is not subscribed");
+    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gPointsTopic + " is not subscribed");
 
-  stat.add("NumSubscriber", gPubPoints.getNumSubscribers());
+  stat.add("NumSubscribers", numSubscribers);
 }
 
 void depth_num_sub_diag(diagnostic_updater::DiagnosticStatusWrapper &stat)
 {
-  if (gPubDepth.getNumSubscribers() > 0)
-    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gPubDepth.getTopic()+" is subscribed");
+  int numSubscribers = gPubPoints.getNumSubscribers();
+  if (numSubscribers > 0)
+    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gDepthTopic + " is subscribed");
   else
-    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gPubDepth.getTopic()+" is not subscribed");
+    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gDepthTopic + " is not subscribed");
 
-  stat.add("NumSubscriber", gPubDepth.getNumSubscribers());
+  stat.add("NumSubscribers", numSubscribers);
 }
 
 void intensity_num_sub_diag(diagnostic_updater::DiagnosticStatusWrapper &stat)
 {
-  if (gPubIntensity.getNumSubscribers() > 0)
-    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gPubIntensity.getTopic()+" is subscribed");
+  int numSubscribers = gPubPoints.getNumSubscribers();
+  if (numSubscribers > 0)
+    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gIntensityTopic + " is subscribed");
   else
-    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gPubIntensity.getTopic()+" is not subscribed");
+    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gIntensityTopic + " is not subscribed");
 
-  stat.add("NumSubscriber", gPubIntensity.getNumSubscribers());
+  stat.add("NumSubscribers", numSubscribers);
 }
 
 void statemap_num_sub_diag(diagnostic_updater::DiagnosticStatusWrapper &stat)
 {
-  if (gPubState.getNumSubscribers() > 0)
-    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gPubState.getTopic()+" is subscribed");
+  int numSubscribers = gPubPoints.getNumSubscribers();
+  if (numSubscribers > 0)
+    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gStateTopic + " is subscribed");
   else
-    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gPubState.getTopic()+" is not subscribed");
+    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gStateTopic + " is not subscribed");
 
-  stat.add("NumSubscriber", gPubState.getNumSubscribers());
+  stat.add("NumSubscribers", numSubscribers);
 }
 
 void publishCameraInfo(std_msgs::Header header, VisionaryTMiniData& dataHandler)
@@ -378,6 +385,13 @@ int main(int argc, char** argv)
                            1,
                            (image_transport::SubscriberStatusCallback)on_new_subscriber_it,
                            image_transport::SubscriberStatusCallback());
+
+  gDeviceIdent = gControl->getDeviceIdent();
+  gCameraInfoTopic = gPubCameraInfo.getTopic();
+  gPointsTopic = gPubPoints.getTopic();
+  gDepthTopic = gPubDepth.getTopic();
+  gIntensityTopic = gPubIntensity.getTopic();
+  gStateTopic = gPubState.getTopic();
 
   //diagnostics
   updater.reset(new diagnostic_updater::Updater());
