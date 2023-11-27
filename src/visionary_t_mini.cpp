@@ -30,7 +30,6 @@ std::shared_ptr<VisionaryTMiniData> gDataHandler;
 image_transport::Publisher gPubDepth, gPubIntensity, gPubState;
 ros::Publisher             gPubCameraInfo, gPubPoints;
 
-diagnostic_updater::Updater updater;
 std::shared_ptr<diagnostic_updater::TopicDiagnostic> gPubDepth_freq, gPubIntensity_freq, gPubState_freq;
 std::shared_ptr<diagnostic_updater::TopicDiagnostic> gPubCameraInfo_freq, gPubPoints_freq;
 
@@ -370,6 +369,7 @@ int main(int argc, char** argv)
                            image_transport::SubscriberStatusCallback());
 
   //diagnostics
+  diagnostic_updater::Updater updater;
   updater.setHardwareID(nh.getNamespace());
   updater.add("driver", driver_diagnostics);
 
