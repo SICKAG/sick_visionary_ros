@@ -34,6 +34,9 @@ diagnostic_updater::Updater updater;
 std::shared_ptr<diagnostic_updater::TopicDiagnostic> gPubDepth_freq, gPubIntensity_freq, gPubState_freq;
 std::shared_ptr<diagnostic_updater::TopicDiagnostic> gPubCameraInfo_freq, gPubPoints_freq;
 
+std::shared_ptr<diagnostic_updater::FunctionDiagnosticTask> gPubDepth_numSub, gPubIntensity_numSub, gPubState_numSub;
+std::shared_ptr<diagnostic_updater::FunctionDiagnosticTask> gPubCameraInfo_numSub, gPubPoints_numSub;
+
 std::string gFrameId;
 
 boost::mutex gDataMtx;
@@ -44,11 +47,56 @@ void driver_diagnostics(diagnostic_updater::DiagnosticStatusWrapper &stat)
   stat.summary(diagnostic_msgs::DiagnosticStatus::OK, "driver running");
   stat.add("frame_id", gFrameId);
   stat.add("device_ident", gControl->getDeviceIdent());
-  stat.add("NumSubscriber_camera_info", gPubCameraInfo.getNumSubscribers());
-  stat.add("NumSubscriber_points", gPubPoints.getNumSubscribers());
-  stat.add("NumSubscriber_depth", gPubDepth.getNumSubscribers());
-  stat.add("NumSubscriber_intensity", gPubIntensity.getNumSubscribers());
-  stat.add("NumSubscriber_statemap", gPubState.getNumSubscribers());
+}
+
+void camera_info_num_sub_diag(diagnostic_updater::DiagnosticStatusWrapper &stat)
+{
+  if (gPubCameraInfo.getNumSubscribers() > 0)
+    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gPubCameraInfo.getTopic()+" is subscribed");
+  else
+    stat.summary(diagnostic_msgs::DiagnosticStatus::OK, gPubCameraInfo.getTopic()+" is not subscribed");
+
+  stat.add("NumSubscriber", gPubCameraInfo.getNumSubscribers());
+}
+
+void points_num_sub_diag(diagnostic_updater::DiagnosticStatusWrapper &stat)
+{
+  if (gPubPoints.getNumSubscribers() > 0)
+    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gPubPoints.getTopic()+" is subscribed");
+  else
+    stat.summary(diagnostic_msgs::DiagnosticStatus::OK, gPubPoints.getTopic()+" is not subscribed");
+
+  stat.add("NumSubscriber", gPubPoints.getNumSubscribers());
+}
+
+void depth_num_sub_diag(diagnostic_updater::DiagnosticStatusWrapper &stat)
+{
+  if (gPubDepth.getNumSubscribers() > 0)
+    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gPubDepth.getTopic()+" is subscribed");
+  else
+    stat.summary(diagnostic_msgs::DiagnosticStatus::OK, gPubDepth.getTopic()+" is not subscribed");
+
+  stat.add("NumSubscriber", gPubDepth.getNumSubscribers());
+}
+
+void intensity_num_sub_diag(diagnostic_updater::DiagnosticStatusWrapper &stat)
+{
+  if (gPubIntensity.getNumSubscribers() > 0)
+    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gPubIntensity.getTopic()+" is subscribed");
+  else
+    stat.summary(diagnostic_msgs::DiagnosticStatus::OK, gPubIntensity.getTopic()+" is not subscribed");
+
+  stat.add("NumSubscriber", gPubIntensity.getNumSubscribers());
+}
+
+void statemap_num_sub_diag(diagnostic_updater::DiagnosticStatusWrapper &stat)
+{
+  if (gPubState.getNumSubscribers() > 0)
+    stat.mergeSummary(diagnostic_msgs::DiagnosticStatus::OK, gPubState.getTopic()+" is subscribed");
+  else
+    stat.summary(diagnostic_msgs::DiagnosticStatus::OK, gPubState.getTopic()+" is not subscribed");
+
+  stat.add("NumSubscriber", gPubState.getNumSubscribers());
 }
 
 void publishCameraInfo(std_msgs::Header header, VisionaryTMiniData& dataHandler)
@@ -341,6 +389,18 @@ int main(int argc, char** argv)
                                                                                          diagnostic_updater::TimeStampStatusParam(min_acceptable, max_acceptable)));
   gPubState_freq.reset(new diagnostic_updater::TopicDiagnostic("statemap", updater, diagnostic_updater::FrequencyStatusParam(&min_freq, &max_freq, tolerance, window_size),
                                                                                     diagnostic_updater::TimeStampStatusParam(min_acceptable, max_acceptable)));
+
+  gPubCameraInfo_numSub.reset(new diagnostic_updater::FunctionDiagnosticTask("camera_info_num_sub", boost::bind(&camera_info_num_sub_diag, boost::placeholders::_1)));
+  gPubCameraInfo_numSub.reset(new diagnostic_updater::FunctionDiagnosticTask("camera_info_num_sub", boost::bind(&camera_info_num_sub_diag, boost::placeholders::_1)));
+  gPubCameraInfo_numSub.reset(new diagnostic_updater::FunctionDiagnosticTask("camera_info_num_sub", boost::bind(&camera_info_num_sub_diag, boost::placeholders::_1)));
+  gPubCameraInfo_numSub.reset(new diagnostic_updater::FunctionDiagnosticTask("camera_info_num_sub", boost::bind(&camera_info_num_sub_diag, boost::placeholders::_1)));
+  gPubCameraInfo_numSub.reset(new diagnostic_updater::FunctionDiagnosticTask("camera_info_num_sub", boost::bind(&camera_info_num_sub_diag, boost::placeholders::_1)));
+
+  gPubCameraInfo_freq->addTask(gPubCameraInfo_numSub.get());
+  gPubDepth_freq->addTask(gPubDepth_numSub.get());
+  gPubPoints_freq->addTask(gPubPoints_numSub.get());
+  gPubIntensity_freq->addTask(gPubIntensity_numSub.get());
+  gPubState_freq->addTask(gPubState_numSub.get());
 
   // start receiver thread for camera images
   boost::thread rec_thr(boost::bind(&thr_receive_frame, pDataStream, pDataHandler));
