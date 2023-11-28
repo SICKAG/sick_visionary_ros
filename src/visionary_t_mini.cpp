@@ -47,6 +47,11 @@ bool         gReceive = true;
 ros::Timer gFakeTicksTimer;
 int gNumSubs = 0;
 
+bool gEnableDepth     = true;
+bool gEnableIntensity = true;
+bool gEnableState     = true;
+bool gEnablePoints    = true;
+
 void diag_timer_cb(const ros::TimerEvent&)
 {
   updater->update();
@@ -55,11 +60,10 @@ void diag_timer_cb(const ros::TimerEvent&)
 void fake_ticks_timer_cb(const ros::TimerEvent&)
 {
   ros::Time now = ros::Time::now();
-  gPubCameraInfo_freq->tick(now);
-  gPubDepth_freq->tick(now);
-  gPubIntensity_freq->tick(now);
-  gPubState_freq->tick(now);
-  gPubPoints_freq->tick(now);
+  if (gEnableDepth)     gPubDepth_freq->tick(now);
+  if (gEnableIntensity) gPubIntensity_freq->tick(now);
+  if (gEnableState)     gPubState_freq->tick(now);
+  if (gEnablePoints)    gPubPoints_freq->tick(now);
 }
 
 void driver_diagnostics(diagnostic_updater::DiagnosticStatusWrapper &stat)
@@ -268,26 +272,26 @@ void publish_frame(VisionaryTMiniData& dataHandler)
     publishedAnything = true;
     publishCameraInfo(header, dataHandler);
   }
-  gPubDepth_freq->tick(header.stamp);
-  if (gPubDepth.getNumSubscribers() > 0)
+  if (gEnableDepth) gPubDepth_freq->tick(header.stamp);
+  if (gEnableDepth && gPubDepth.getNumSubscribers() > 0)
   {
     publishedAnything = true;
     publishDepth(header, dataHandler);
   }
-  gPubIntensity_freq->tick(header.stamp);
-  if (gPubIntensity.getNumSubscribers() > 0)
+  if (gEnableIntensity) gPubIntensity_freq->tick(header.stamp);
+  if (gEnableIntensity && gPubIntensity.getNumSubscribers() > 0)
   {
     publishedAnything = true;
     publishIntensity(header, dataHandler);
   }
-  gPubState_freq->tick(header.stamp);
-  if (gPubState.getNumSubscribers() > 0)
+  if (gEnableState) gPubState_freq->tick(header.stamp);
+  if (gEnableState && gPubState.getNumSubscribers() > 0)
   {
     publishedAnything = true;
     publishStateMap(header, dataHandler);
   }
-  gPubPoints_freq->tick(header.stamp);
-  if (gPubPoints.getNumSubscribers() > 0)
+  if (gEnablePoints) gPubPoints_freq->tick(header.stamp);
+  if (gEnablePoints && gPubPoints.getNumSubscribers() > 0)
   {
     publishedAnything = true;
     publishPointCloud(header, dataHandler);
@@ -374,6 +378,10 @@ int main(int argc, char** argv)
 
   ros::param::get("~remote_device_ip", remoteDeviceIp);
   ros::param::get("~frame_id", gFrameId);
+  ros::param::get("~enable_depth", gEnableDepth);
+  ros::param::get("~enable_intensity", gEnableIntensity);
+  ros::param::get("~enable_state", gEnableState);
+  ros::param::get("~enable_points", gEnablePoints);
 
   std::shared_ptr<VisionaryTMiniData>  pDataHandler = std::make_shared<VisionaryTMiniData>();
   std::shared_ptr<VisionaryDataStream> pDataStream  = std::make_shared<VisionaryDataStream>(pDataHandler);
@@ -399,29 +407,38 @@ int main(int argc, char** argv)
 
   // make me public (after init.)
   image_transport::ImageTransport it(nh);
-  gPubCameraInfo = nh.advertise<sensor_msgs::CameraInfo>(
-    "camera_info", 1, (ros::SubscriberStatusCallback)on_new_subscriber_ros, (ros::SubscriberStatusCallback)on_subscriber_disconnected_ros);
-  gPubDepth  = it.advertise("depth",
-                           1,
-                           (image_transport::SubscriberStatusCallback)on_new_subscriber_it,
-                           (image_transport::SubscriberStatusCallback)on_subscriber_disconnected_it);
-  gPubPoints = nh.advertise<sensor_msgs::PointCloud2>(
-    "points", 2, (ros::SubscriberStatusCallback)on_new_subscriber_ros, (ros::SubscriberStatusCallback)on_subscriber_disconnected_ros);
-  gPubIntensity = it.advertise("intensity",
-                               1,
-                               (image_transport::SubscriberStatusCallback)on_new_subscriber_it,
-                               (image_transport::SubscriberStatusCallback)on_subscriber_disconnected_it);
-  gPubState     = it.advertise("statemap",
-                           1,
-                           (image_transport::SubscriberStatusCallback)on_new_subscriber_it,
-                           (image_transport::SubscriberStatusCallback)on_subscriber_disconnected_it);
+  gPubCameraInfo = nh.advertise<sensor_msgs::CameraInfo>("camera_info",
+                                                         1,
+                                                         (ros::SubscriberStatusCallback)on_new_subscriber_ros,
+                                                         (ros::SubscriberStatusCallback)on_subscriber_disconnected_ros);
+  if (gEnableDepth)     
+    gPubDepth  = it.advertise("depth",
+                              1,
+                              (image_transport::SubscriberStatusCallback)on_new_subscriber_it,
+                              (image_transport::SubscriberStatusCallback)on_subscriber_disconnected_it);
+  if (gEnablePoints)    
+    gPubPoints = nh.advertise<sensor_msgs::PointCloud2>("points",
+                                                        2,
+                                                        (ros::SubscriberStatusCallback)on_new_subscriber_ros,
+                                                        (ros::SubscriberStatusCallback)on_subscriber_disconnected_ros);
+  if (gEnableIntensity)
+    gPubIntensity = it.advertise("intensity",
+                                 1,
+                                 (image_transport::SubscriberStatusCallback)on_new_subscriber_it,
+                                 (image_transport::SubscriberStatusCallback)on_subscriber_disconnected_it);
+  if (gEnableState)
+    gPubState     = it.advertise("statemap",
+                                 1,
+                                 (image_transport::SubscriberStatusCallback)on_new_subscriber_it,
+                                 (image_transport::SubscriberStatusCallback)on_subscriber_disconnected_it);
 
   gDeviceIdent = gControl->getDeviceIdent();
-  gCameraInfoTopic = gPubCameraInfo.getTopic();
-  gPointsTopic = gPubPoints.getTopic();
-  gDepthTopic = gPubDepth.getTopic();
-  gIntensityTopic = gPubIntensity.getTopic();
-  gStateTopic = gPubState.getTopic();
+
+  gCameraInfoTopic                      = gPubCameraInfo.getTopic();
+  if (gEnablePoints)    gPointsTopic    = gPubPoints.getTopic();
+  if (gEnableDepth)     gDepthTopic     = gPubDepth.getTopic();
+  if (gEnableIntensity) gIntensityTopic = gPubIntensity.getTopic();
+  if (gEnableState)     gStateTopic     = gPubState.getTopic();
 
   //diagnostics
   updater.reset(new diagnostic_updater::Updater());
@@ -439,25 +456,26 @@ int main(int argc, char** argv)
   double max_acceptable = 5.0;
   gPubCameraInfo_freq.reset(new diagnostic_updater::TopicDiagnostic("camera_info", *updater, diagnostic_updater::FrequencyStatusParam(&min_freq, &max_freq, tolerance, window_size),
                                                                                              diagnostic_updater::TimeStampStatusParam(min_acceptable, max_acceptable)));
-  gPubDepth_freq.reset(new diagnostic_updater::TopicDiagnostic("depth", *updater, diagnostic_updater::FrequencyStatusParam(&min_freq, &max_freq, tolerance, window_size),
-                                                                                  diagnostic_updater::TimeStampStatusParam(min_acceptable, max_acceptable)));
-  gPubPoints_freq.reset(new diagnostic_updater::TopicDiagnostic("points", *updater, diagnostic_updater::FrequencyStatusParam(&min_freq, &max_freq, tolerance, window_size),
-                                                                                    diagnostic_updater::TimeStampStatusParam(min_acceptable, max_acceptable)));
-  gPubIntensity_freq.reset(new diagnostic_updater::TopicDiagnostic("intensity", *updater, diagnostic_updater::FrequencyStatusParam(&min_freq, &max_freq, tolerance, window_size),
-                                                                                          diagnostic_updater::TimeStampStatusParam(min_acceptable, max_acceptable)));
-  gPubState_freq.reset(new diagnostic_updater::TopicDiagnostic("statemap", *updater, diagnostic_updater::FrequencyStatusParam(&min_freq, &max_freq, tolerance, window_size),
-                                                                                     diagnostic_updater::TimeStampStatusParam(min_acceptable, max_acceptable)));
+  if (gEnableDepth) gPubDepth_freq.reset(new diagnostic_updater::TopicDiagnostic("depth", *updater, diagnostic_updater::FrequencyStatusParam(&min_freq, &max_freq, tolerance, window_size),
+                                                                                                    diagnostic_updater::TimeStampStatusParam(min_acceptable, max_acceptable)));
+  if (gEnablePoints) gPubPoints_freq.reset(new diagnostic_updater::TopicDiagnostic("points", *updater, diagnostic_updater::FrequencyStatusParam(&min_freq, &max_freq, tolerance, window_size),
+                                                                                                       diagnostic_updater::TimeStampStatusParam(min_acceptable, max_acceptable)));
+  if (gEnableIntensity) gPubIntensity_freq.reset(new diagnostic_updater::TopicDiagnostic("intensity", *updater, diagnostic_updater::FrequencyStatusParam(&min_freq, &max_freq, tolerance, window_size),
+                                                                                                                diagnostic_updater::TimeStampStatusParam(min_acceptable, max_acceptable)));
+  if (gEnableState) gPubState_freq.reset(new diagnostic_updater::TopicDiagnostic("statemap", *updater, diagnostic_updater::FrequencyStatusParam(&min_freq, &max_freq, tolerance, window_size),
+                                                                                                       diagnostic_updater::TimeStampStatusParam(min_acceptable, max_acceptable)));
 
-  gPubDepth_numSub.reset(new diagnostic_updater::FunctionDiagnosticTask("depth_num_sub", boost::bind(&depth_num_sub_diag, boost::placeholders::_1)));
-  gPubPoints_numSub.reset(new diagnostic_updater::FunctionDiagnosticTask("points_num_sub", boost::bind(&points_num_sub_diag, boost::placeholders::_1)));
-  gPubIntensity_numSub.reset(new diagnostic_updater::FunctionDiagnosticTask("intensity_num_sub", boost::bind(&intensity_num_sub_diag, boost::placeholders::_1)));
-  gPubState_numSub.reset(new diagnostic_updater::FunctionDiagnosticTask("statemap_num_sub", boost::bind(&statemap_num_sub_diag, boost::placeholders::_1)));
+  gPubCameraInfo_numSub.reset(new diagnostic_updater::FunctionDiagnosticTask("camera_info_num_sub", boost::bind(&camera_info_num_sub_diag, boost::placeholders::_1)));
+  if (gEnableDepth)     gPubDepth_numSub.reset(new diagnostic_updater::FunctionDiagnosticTask("depth_num_sub", boost::bind(&depth_num_sub_diag, boost::placeholders::_1)));
+  if (gEnablePoints)    gPubPoints_numSub.reset(new diagnostic_updater::FunctionDiagnosticTask("points_num_sub", boost::bind(&points_num_sub_diag, boost::placeholders::_1)));
+  if (gEnableIntensity) gPubIntensity_numSub.reset(new diagnostic_updater::FunctionDiagnosticTask("intensity_num_sub", boost::bind(&intensity_num_sub_diag, boost::placeholders::_1)));
+  if (gEnableState)     gPubState_numSub.reset(new diagnostic_updater::FunctionDiagnosticTask("statemap_num_sub", boost::bind(&statemap_num_sub_diag, boost::placeholders::_1)));
 
   gPubCameraInfo_freq->addTask(gPubCameraInfo_numSub.get());
-  gPubDepth_freq->addTask(gPubDepth_numSub.get());
-  gPubPoints_freq->addTask(gPubPoints_numSub.get());
-  gPubIntensity_freq->addTask(gPubIntensity_numSub.get());
-  gPubState_freq->addTask(gPubState_numSub.get());
+  if (gEnableDepth)     gPubDepth_freq->addTask(gPubDepth_numSub.get());
+  if (gEnablePoints)    gPubPoints_freq->addTask(gPubPoints_numSub.get());
+  if (gEnableIntensity) gPubIntensity_freq->addTask(gPubIntensity_numSub.get());
+  if (gEnableState)     gPubState_freq->addTask(gPubState_numSub.get());
 
   ros::Timer timer = nh.createTimer(ros::Duration(1.0), diag_timer_cb);
   gFakeTicksTimer = nh.createTimer(ros::Duration(1.0 / desired_freq), fake_ticks_timer_cb);
@@ -475,10 +493,10 @@ int main(int argc, char** argv)
   gControl->close();
   pDataStream->close();
 
-  gPubDepth.shutdown();
-  gPubPoints.shutdown();
-  gPubIntensity.shutdown();
-  gPubState.shutdown();
+  if (gEnableDepth)     gPubDepth.shutdown();
+  if (gEnablePoints)    gPubPoints.shutdown();
+  if (gEnableIntensity) gPubIntensity.shutdown();
+  if (gEnableState)     gPubState.shutdown();
   gPubCameraInfo.shutdown();
 
   return 0;
