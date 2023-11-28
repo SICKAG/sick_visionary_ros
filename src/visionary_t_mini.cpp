@@ -489,7 +489,7 @@ int main(int argc, char** argv)
   gReceive = false;
   rec_thr.join();
 
-  gControl->startAcquisition();
+  gControl->stopAcquisition();
   gControl->close();
   pDataStream->close();
 
