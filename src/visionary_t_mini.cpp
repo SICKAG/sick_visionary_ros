@@ -299,21 +299,21 @@ void _on_subscriber_disconnected()
   if (gNumSubs == 0) gFakeTicksTimer.start();
 }
 
-void on_new_subscriber_ros(const ros::SingleSubscriberPublisher& pub)
+void on_new_subscriber_ros(const ros::SingleSubscriberPublisher&)
 {
   _on_new_subscriber();
 }
 
-void on_new_subscriber_it(const image_transport::SingleSubscriberPublisher& pub)
+void on_new_subscriber_it(const image_transport::SingleSubscriberPublisher&)
 {
   _on_new_subscriber();
 }
 
-void on_subscriber_disconnected_ros(const ros::SingleSubscriberPublisher& pub) {
+void on_subscriber_disconnected_ros(const ros::SingleSubscriberPublisher&) {
     _on_subscriber_disconnected();
 }
 
-void on_subscriber_disconnected_it(const image_transport::SingleSubscriberPublisher& pub) {
+void on_subscriber_disconnected_it(const image_transport::SingleSubscriberPublisher&) {
     _on_subscriber_disconnected();
 }
 
