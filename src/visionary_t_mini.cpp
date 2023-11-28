@@ -396,11 +396,9 @@ int main(int argc, char** argv)
   updater->setHardwareID(nh.getNamespace());
   updater->add("driver", driver_diagnostics);
 
-  double desired_freq = 10.0; //TODO - where can I find/configure this
+  double desired_freq = 15.0; //TODO device rate is 15 Hz - where can I find/configure this
   double min_freq = desired_freq*0.9;
   double max_freq = desired_freq*1.1;
-  min_freq = 0.0;   //TODO - remove overwrite
-  max_freq = 100.0; //TODO - remove overwrite
   double tolerance = 0.1;
   int window_size = 5;
   double min_acceptable = -1.0;
