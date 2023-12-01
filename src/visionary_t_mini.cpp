@@ -57,6 +57,7 @@ void diag_timer_cb(const ros::TimerEvent&)
 void fake_ticks_timer_cb(const ros::TimerEvent&)
 {
   ros::Time now = ros::Time::now();
+  gPubCameraInfo_freq->tick(now);
   if (gEnableDepth)     gPubDepth_freq->tick(now);
   if (gEnableIntensity) gPubIntensity_freq->tick(now);
   if (gEnableState)     gPubState_freq->tick(now);
@@ -127,7 +128,6 @@ void publishDepth(std_msgs::Header header, VisionaryTMiniData& dataHandler)
 
   msg->header = header;
   gPubDepth.publish(msg);
-  gPubDepth_freq->tick(header.stamp);
 }
 
 void publishIntensity(std_msgs::Header header, VisionaryTMiniData& dataHandler)
@@ -140,7 +140,6 @@ void publishIntensity(std_msgs::Header header, VisionaryTMiniData& dataHandler)
 
   msg->header = header;
   gPubIntensity.publish(msg);
-  gPubIntensity_freq->tick(header.stamp);
 }
 
 void publishStateMap(std_msgs::Header header, VisionaryTMiniData& dataHandler)
@@ -153,7 +152,6 @@ void publishStateMap(std_msgs::Header header, VisionaryTMiniData& dataHandler)
 
   msg->header = header;
   gPubState.publish(msg);
-  gPubState_freq->tick(header.stamp);
 }
 
 void publishPointCloud(std_msgs::Header header, VisionaryTMiniData& dataHandler)
@@ -206,7 +204,6 @@ void publishPointCloud(std_msgs::Header header, VisionaryTMiniData& dataHandler)
     memcpy(&cloudMsg->data[index * cloudMsg->point_step + cloudMsg->fields[3].offset], &*itIntens, sizeof(uint16_t));
   }
   gPubPoints.publish(cloudMsg);
-  gPubPoints_freq->tick(header.stamp);
 }
 
 void publish_frame(VisionaryTMiniData& dataHandler)
@@ -403,6 +400,7 @@ int main(int argc, char** argv)
   int window_size = 5;
   double min_acceptable = -1.0;
   double max_acceptable = 5.0;
+
   gPubCameraInfo_freq.reset(new diagnostic_updater::TopicDiagnostic("camera_info", *updater, diagnostic_updater::FrequencyStatusParam(&min_freq, &max_freq, tolerance, window_size),
                                                                                              diagnostic_updater::TimeStampStatusParam(min_acceptable, max_acceptable)));
   if (gEnableDepth) gPubDepth_freq.reset(new diagnostic_updater::TopicDiagnostic("depth", *updater, diagnostic_updater::FrequencyStatusParam(&min_freq, &max_freq, tolerance, window_size),
