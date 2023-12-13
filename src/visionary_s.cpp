@@ -26,57 +26,45 @@ std::shared_ptr<VisionaryControl> gControl;
 
 std::shared_ptr<VisionarySData> gDataHandler;
 
-image_transport::Publisher gPubZ, gPubConfidence, gPubRGBA;
+image_transport::Publisher gPubZ, gPubStatemap, gPubRGBA;
 ros::Publisher             gPubCameraInfo, gPubPoints /*, gPubIos*/;
 
-std::shared_ptr<diagnostic_updater::Updater> updater;
-std::shared_ptr<diagnostic_updater::TopicDiagnostic> gPubZ_freq, gPubConfidence_freq, gPubRGBA_freq;
+std::shared_ptr<diagnostic_updater::Updater>         updater;
+std::shared_ptr<diagnostic_updater::TopicDiagnostic> gPubZ_freq, gPubStatemap_freq, gPubRGBA_freq;
 std::shared_ptr<diagnostic_updater::TopicDiagnostic> gPubCameraInfo_freq, gPubPoints_freq;
 
 std::string gFrameId;
 std::string gDeviceIdent;
-std::string gCameraInfoTopic, gPointsTopic, gZTopic, gConfidenceTopic, gRGBATopic;
+bool        gEnableZ, gEnableStatemap, gEnableRGBA, gEnablePoints;
 
 boost::mutex gDataMtx;
 bool         gReceive = true;
 
-ros::Timer gFakeTicksTimer;
 int gNumSubs = 0;
-
-bool gEnableZ          = true;
-bool gEnableConfidence = true;
-bool gEnableRGBA       = true;
-bool gEnablePoints     = true;
 
 void diag_timer_cb(const ros::TimerEvent&)
 {
   updater->update();
 }
 
-void fake_ticks_timer_cb(const ros::TimerEvent&)
-{
-  ros::Time now = ros::Time::now();
-  gPubCameraInfo_freq->tick(now);
-  if (gEnableZ)          gPubZ_freq->tick(now);
-  if (gEnableConfidence) gPubConfidence_freq->tick(now);
-  if (gEnableRGBA)       gPubRGBA_freq->tick(now);
-  if (gEnablePoints)     gPubPoints_freq->tick(now);
-}
-
-void driver_diagnostics(diagnostic_updater::DiagnosticStatusWrapper &stat)
+void driver_diagnostics(diagnostic_updater::DiagnosticStatusWrapper& stat)
 {
   stat.summary(diagnostic_msgs::DiagnosticStatus::OK, "driver running");
   stat.add("frame_id", gFrameId);
   stat.add("device_ident", gDeviceIdent);
   stat.add("NumSubscribers_CameraInfo", gPubCameraInfo.getNumSubscribers());
   stat.add("gEnablePoints", gEnablePoints);
-  if (gEnablePoints)     stat.add("NumSubscribers_Points", gPubPoints.getNumSubscribers());
+  if (gEnablePoints)
+    stat.add("NumSubscribers_Points", gPubPoints.getNumSubscribers());
   stat.add("gEnableZ", gEnableZ);
-  if (gEnableZ)     stat.add("NumSubscribers_Z", gPubZ.getNumSubscribers());
-  stat.add("gEnableConfidence", gEnableConfidence);
-  if (gEnableConfidence)     stat.add("NumSubscribers_Confidence", gPubConfidence.getNumSubscribers());
+  if (gEnableZ)
+    stat.add("NumSubscribers_Z", gPubZ.getNumSubscribers());
+  stat.add("gEnableStatemap", gEnableStatemap);
+  if (gEnableStatemap)
+    stat.add("NumSubscribers_Statemap", gPubStatemap.getNumSubscribers());
   stat.add("gEnableRGBA", gEnableRGBA);
-  if (gEnableRGBA)     stat.add("NumSubscribers_RGBA", gPubRGBA.getNumSubscribers());
+  if (gEnableRGBA)
+    stat.add("NumSubscribers_RGBA", gPubRGBA.getNumSubscribers());
 }
 
 void publishCameraInfo(std_msgs::Header header, VisionarySData& dataHandler)
@@ -129,7 +117,7 @@ void publishZ(std_msgs::Header header, VisionarySData& dataHandler)
   gPubZ.publish(msg);
 }
 
-void publishConfidence(std_msgs::Header header, VisionarySData& dataHandler)
+void publishStatemap(std_msgs::Header header, VisionarySData& dataHandler)
 {
   std::vector<uint16_t> vec = dataHandler.getConfidenceMap();
   cv::Mat               m   = cv::Mat(dataHandler.getHeight(), dataHandler.getWidth(), CV_16UC1);
@@ -138,7 +126,7 @@ void publishConfidence(std_msgs::Header header, VisionarySData& dataHandler)
     cv_bridge::CvImage(std_msgs::Header(), sensor_msgs::image_encodings::TYPE_16UC1, m).toImageMsg();
 
   msg->header = header;
-  gPubConfidence.publish(msg);
+  gPubStatemap.publish(msg);
 }
 
 void publishRGBA(std_msgs::Header header, VisionarySData& dataHandler)
@@ -222,38 +210,50 @@ void publish_frame(VisionarySData& dataHandler)
   header.stamp    = ros::Time::now();
   header.frame_id = gFrameId;
 
-  gPubCameraInfo_freq->tick(header.stamp);
   if (gPubCameraInfo.getNumSubscribers() > 0)
   {
     publishedAnything = true;
     publishCameraInfo(header, dataHandler);
+    // gPubCameraInfo_freq->tick(header.stamp);
   }
-  if (gEnableZ) gPubZ_freq->tick(header.stamp);
   if (gEnableZ && gPubZ.getNumSubscribers() > 0)
   {
     publishedAnything = true;
     publishZ(header, dataHandler);
+    // gPubZ_freq->tick(header.stamp);
   }
-  if (gEnableConfidence) gPubConfidence_freq->tick(header.stamp);
-  if (gEnableConfidence && gPubConfidence.getNumSubscribers() > 0)
+  if (gEnableStatemap && gPubStatemap.getNumSubscribers() > 0)
   {
     publishedAnything = true;
-    publishConfidence(header, dataHandler);
+    publishStatemap(header, dataHandler);
+    // gPubStatemap_freq->tick(header.stamp);
   }
-  if (gEnableRGBA) gPubRGBA_freq->tick(header.stamp);
   if (gEnableRGBA && gPubRGBA.getNumSubscribers() > 0)
   {
     publishedAnything = true;
     publishRGBA(header, dataHandler);
+    // gPubRGBA_freq->tick(header.stamp);
   }
-  if (gEnablePoints) gPubPoints_freq->tick(header.stamp);
   if (gEnablePoints && gPubPoints.getNumSubscribers() > 0)
   {
     publishedAnything = true;
     publishPointCloud(header, dataHandler);
+    // gPubPoints_freq->tick(header.stamp);
   }
 
-  if (!publishedAnything)
+  if (publishedAnything)
+  {
+    gPubCameraInfo_freq->tick(header.stamp);
+    if (gEnableZ)
+      gPubZ_freq->tick(header.stamp);
+    if (gEnableStatemap)
+      gPubStatemap_freq->tick(header.stamp);
+    if (gEnableRGBA)
+      gPubRGBA_freq->tick(header.stamp);
+    if (gEnablePoints)
+      gPubPoints_freq->tick(header.stamp);
+  }
+  else
   {
     ROS_DEBUG("Nothing published");
     if (gControl)
@@ -291,7 +291,6 @@ void _on_new_subscriber()
 {
   gNumSubs++;
   ROS_DEBUG_STREAM("Got new subscriber, total amount of subscribers: " << gNumSubs);
-  if (gNumSubs != 0) gFakeTicksTimer.stop();
   if (gControl)
     gControl->startAcquisition();
 }
@@ -300,7 +299,6 @@ void _on_subscriber_disconnected()
 {
   gNumSubs--;
   ROS_DEBUG_STREAM("Subscriber disconnected, total amount of subscribers: " << gNumSubs);
-  if (gNumSubs == 0) gFakeTicksTimer.start();
 }
 
 void on_new_subscriber_ros(const ros::SingleSubscriberPublisher&)
@@ -313,17 +311,18 @@ void on_new_subscriber_it(const image_transport::SingleSubscriberPublisher&)
   _on_new_subscriber();
 }
 
-void on_subscriber_disconnected_ros(const ros::SingleSubscriberPublisher&) {
-    _on_subscriber_disconnected();
+void on_subscriber_disconnected_ros(const ros::SingleSubscriberPublisher&)
+{
+  _on_subscriber_disconnected();
 }
 
-void on_subscriber_disconnected_it(const image_transport::SingleSubscriberPublisher&) {
-    _on_subscriber_disconnected();
+void on_subscriber_disconnected_it(const image_transport::SingleSubscriberPublisher&)
+{
+  _on_subscriber_disconnected();
 }
 
 int main(int argc, char** argv)
 {
-  //ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug);
   ros::init(argc, argv, "sick_visionary_s");
   ros::NodeHandle nh("~");
 
@@ -334,7 +333,7 @@ int main(int argc, char** argv)
   ros::param::get("~remote_device_ip", remoteDeviceIp);
   ros::param::get("~frame_id", gFrameId);
   ros::param::get("~enable_z", gEnableZ);
-  ros::param::get("~enable_confidence", gEnableConfidence);
+  ros::param::get("~enable_statemap", gEnableStatemap);
   ros::param::get("~enable_rgba", gEnableRGBA);
   ros::param::get("~enable_points", gEnablePoints);
 
@@ -366,60 +365,69 @@ int main(int argc, char** argv)
                                                          1,
                                                          (ros::SubscriberStatusCallback)on_new_subscriber_ros,
                                                          (ros::SubscriberStatusCallback)on_subscriber_disconnected_ros);
-  if (gEnablePoints)    
+  if (gEnablePoints)
     gPubPoints = nh.advertise<sensor_msgs::PointCloud2>("points",
                                                         2,
                                                         (ros::SubscriberStatusCallback)on_new_subscriber_ros,
                                                         (ros::SubscriberStatusCallback)on_subscriber_disconnected_ros);
-  if (gEnableZ)     
-    gPubZ  = it.advertise("z",
-                          1,
-                          (image_transport::SubscriberStatusCallback)on_new_subscriber_it,
-                          (image_transport::SubscriberStatusCallback)on_subscriber_disconnected_it);
-  if (gEnableConfidence)
-    gPubConfidence = it.advertise("confidence",
-                                  1,
-                                  (image_transport::SubscriberStatusCallback)on_new_subscriber_it,
-                                  (image_transport::SubscriberStatusCallback)on_subscriber_disconnected_it);
+  if (gEnableZ)
+    gPubZ = it.advertise("z",
+                         1,
+                         (image_transport::SubscriberStatusCallback)on_new_subscriber_it,
+                         (image_transport::SubscriberStatusCallback)on_subscriber_disconnected_it);
+  if (gEnableStatemap)
+    gPubStatemap = it.advertise("statemap",
+                                1,
+                                (image_transport::SubscriberStatusCallback)on_new_subscriber_it,
+                                (image_transport::SubscriberStatusCallback)on_subscriber_disconnected_it);
   if (gEnableRGBA)
-    gPubRGBA     = it.advertise("rgba",
-                                 1,
-                                 (image_transport::SubscriberStatusCallback)on_new_subscriber_it,
-                                 (image_transport::SubscriberStatusCallback)on_subscriber_disconnected_it);
+    gPubRGBA = it.advertise("rgba",
+                            1,
+                            (image_transport::SubscriberStatusCallback)on_new_subscriber_it,
+                            (image_transport::SubscriberStatusCallback)on_subscriber_disconnected_it);
 
   gDeviceIdent = gControl->getDeviceIdent();
 
-  gCameraInfoTopic                        = gPubCameraInfo.getTopic();
-  if (gEnablePoints)     gPointsTopic     = gPubPoints.getTopic();
-  if (gEnableZ)          gZTopic          = gPubZ.getTopic();
-  if (gEnableConfidence) gConfidenceTopic = gPubConfidence.getTopic();
-  if (gEnableRGBA)       gRGBATopic       = gPubRGBA.getTopic();
-
-  //diagnostics
+  // diagnostics
   updater.reset(new diagnostic_updater::Updater());
   updater->setHardwareID(nh.getNamespace());
   updater->add("driver", driver_diagnostics);
 
-  double desired_freq = 15.0; //TODO device rate is 15 Hz - where can I find/configure this
-  double min_freq = desired_freq*0.9;
-  double max_freq = desired_freq*1.1;
-  double tolerance = 0.1;
-  int window_size = 5;
-  double min_acceptable = -1.0;
-  double max_acceptable = 5.0;
-  gPubCameraInfo_freq.reset(new diagnostic_updater::TopicDiagnostic("camera_info", *updater, diagnostic_updater::FrequencyStatusParam(&min_freq, &max_freq, tolerance, window_size),
-                                                                                             diagnostic_updater::TimeStampStatusParam(min_acceptable, max_acceptable)));
-  if (gEnablePoints) gPubPoints_freq.reset(new diagnostic_updater::TopicDiagnostic("points", *updater, diagnostic_updater::FrequencyStatusParam(&min_freq, &max_freq, tolerance, window_size),
-                                                                                                       diagnostic_updater::TimeStampStatusParam(min_acceptable, max_acceptable)));
-  if (gEnableZ) gPubZ_freq.reset(new diagnostic_updater::TopicDiagnostic("depth", *updater, diagnostic_updater::FrequencyStatusParam(&min_freq, &max_freq, tolerance, window_size),
-                                                                                                    diagnostic_updater::TimeStampStatusParam(min_acceptable, max_acceptable)));
-  if (gEnableConfidence) gPubConfidence_freq.reset(new diagnostic_updater::TopicDiagnostic("intensity", *updater, diagnostic_updater::FrequencyStatusParam(&min_freq, &max_freq, tolerance, window_size),
-                                                                                                                diagnostic_updater::TimeStampStatusParam(min_acceptable, max_acceptable)));
-  if (gEnableRGBA) gPubRGBA_freq.reset(new diagnostic_updater::TopicDiagnostic("statemap", *updater, diagnostic_updater::FrequencyStatusParam(&min_freq, &max_freq, tolerance, window_size),
-                                                                                                       diagnostic_updater::TimeStampStatusParam(min_acceptable, max_acceptable)));
+  double desiredFreq; // device max freq is 30FPS
+  ros::param::get("~desired_frequency", desiredFreq);
+  double min_freq = desiredFreq * 0.9;
+  double max_freq = desiredFreq * 1.1;
+  gPubCameraInfo_freq.reset(
+    new diagnostic_updater::TopicDiagnostic("camera_info",
+                                            *updater,
+                                            diagnostic_updater::FrequencyStatusParam(&min_freq, &max_freq),
+                                            diagnostic_updater::TimeStampStatusParam()));
+  if (gEnablePoints)
+    gPubPoints_freq.reset(
+      new diagnostic_updater::TopicDiagnostic("points",
+                                              *updater,
+                                              diagnostic_updater::FrequencyStatusParam(&min_freq, &max_freq),
+                                              diagnostic_updater::TimeStampStatusParam()));
+  if (gEnableZ)
+    gPubZ_freq.reset(
+      new diagnostic_updater::TopicDiagnostic("z",
+                                              *updater,
+                                              diagnostic_updater::FrequencyStatusParam(&min_freq, &max_freq),
+                                              diagnostic_updater::TimeStampStatusParam()));
+  if (gEnableStatemap)
+    gPubStatemap_freq.reset(
+      new diagnostic_updater::TopicDiagnostic("statemap",
+                                              *updater,
+                                              diagnostic_updater::FrequencyStatusParam(&min_freq, &max_freq),
+                                              diagnostic_updater::TimeStampStatusParam()));
+  if (gEnableRGBA)
+    gPubRGBA_freq.reset(
+      new diagnostic_updater::TopicDiagnostic("rgba",
+                                              *updater,
+                                              diagnostic_updater::FrequencyStatusParam(&min_freq, &max_freq),
+                                              diagnostic_updater::TimeStampStatusParam()));
 
   ros::Timer timer = nh.createTimer(ros::Duration(1.0), diag_timer_cb);
-  gFakeTicksTimer = nh.createTimer(ros::Duration(1.0 / desired_freq), fake_ticks_timer_cb);
 
   // start receiver thread for camera images
   boost::thread rec_thr(boost::bind(&thr_receive_frame, pDataStream, pDataHandler));
@@ -434,10 +442,14 @@ int main(int argc, char** argv)
   gControl->close();
   pDataStream->close();
 
-  if (gEnableZ)          gPubZ.shutdown();
-  if (gEnableConfidence) gPubConfidence.shutdown();
-  if (gEnableRGBA)       gPubRGBA.shutdown();
-  if (gEnablePoints)     gPubPoints.shutdown();
+  if (gEnableZ)
+    gPubZ.shutdown();
+  if (gEnableStatemap)
+    gPubStatemap.shutdown();
+  if (gEnableRGBA)
+    gPubRGBA.shutdown();
+  if (gEnablePoints)
+    gPubPoints.shutdown();
   gPubCameraInfo.shutdown();
   // gPubIos.shutdown();
 

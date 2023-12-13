@@ -11,7 +11,7 @@
 This project and everyone participating in it is governed by the following [Code of Conduct](CODE_OF_CONDUCT.md).
 By participating, you are expected to uphold this code.
 
-## If have a question or are in need of technical support
+## If you have a question or are in need of technical support
 
 Depending on the nature of your question, there are two support channels:
 

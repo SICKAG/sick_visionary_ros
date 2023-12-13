@@ -1,6 +1,11 @@
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Changelog for package sick_visionary_ros
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1.1.0 (2023-12-08)
+------------------
+* add ROS diagnostics feature to check topic publishing frequencies (Contribution by 4am-robotics)
+* update README with new parameters and fix relative links
+* add new parameters to launch files
 
 1.0.0 (2023-11-16)
 ------------------
