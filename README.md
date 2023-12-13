@@ -127,11 +127,53 @@ The launch file starts the respective ROS Node and provides it with the necessar
 
 ### Parameters
 
+#### sick_visionary-s.launch
+
 - `remote_device_ip:`
   IP-address of the device (string, default: 192.168.1.10)
 
 - `frame_id:`
   Name of the reference frame. (string, default: camera)
+
+- `enable_z:`
+  Enables publishing of z-topic. (bool, default: true)
+
+- `enable_statemap:`
+  Enables publishing of statemap-topic. (bool, default: true)
+
+- `enable_rgba:`
+  Enables publishing of rgba-topic. (bool, default: true)
+
+- `enable_points:`
+  Enables publishing of points-topic. (bool, default: true)
+
+- `desired_frequency:`
+  Sets the desired frequency in the diagnostics-topic.
+  Min and max frequencies are derived from it (double, default: 15.0)
+
+#### sick_visionary-t_mini.launch
+
+- `remote_device_ip:`
+  IP-address of the device (string, default: 192.168.1.10)
+
+- `frame_id:`
+  Name of the reference frame. (string, default: camera)
+
+- `enable_depth:`
+  Enables publishing of depth-topic. (bool, default: true)
+
+- `enable_statemap:`
+  Enables publishing of statemap-topic. (bool, default: true)
+
+- `enable_intensity:`
+  Enables publishing of intensity-topic. (bool, default: true)
+
+- `enable_points:`
+  Enables publishing of points-topic. (bool, default: true)
+
+- `desired_frequency:`
+  Sets the desired frequency in the diagnostics-topic.
+  Min and max frequencies are derived from it (double, default: 15.0)
 
 ## Nodes
 
@@ -144,7 +186,7 @@ Visionary-S is a 3D camera based on structured light stereovision. It provides r
 - `/camera_info` [(sensor_msgs/CameraInfo)](https://docs.ros.org/en/api/sensor_msgs/html/msg/CameraInfo.html) Camera calibration and metadata.
 - `/z` [(sensor_msgs/Image)](https://docs.ros.org/en/api/sensor_msgs/html/msg/Image.html) Depicts distance to camera. Contains uint16 distance values.
 - `/points` [(sensor_msgs/PointCloud2)](https://docs.ros.org/en/melodic/api/sensor_msgs/html/msg/PointCloud2.html) Contains XYZ point cloud [m]
-- `_/confidence` [(sensor_msgs/Image)](https://docs.ros.org/en/api/sensor_msgs/html/msg/Image.html) Raw image from device. Contains uint16 confidence values.
+- `/statemap` [(sensor_msgs/Image)](https://docs.ros.org/en/api/sensor_msgs/html/msg/Image.html) Contains uint16 statemap values which help to understand wheter the data is missing due to a configured filter or due to other circumstances e.g. saturation effects.
 - `/rgba` [(sensor_msgs/Image)](https://docs.ros.org/en/api/sensor_msgs/html/msg/Image.html) RGBA color image.
 
 ### sick_visionary_t_mini
@@ -163,7 +205,7 @@ Visionary-T Mini is a 3D camera based on the time-of-flight (TOF) principle. It 
 
 Depending on the nature of your question, there are two support channels:
 
-1. For questions regarding the code shared in this repo please check the FAQ first and [search if an issue already exists](/SICKAG/sick_visionary_cpp_shared/issues). If a related issue doesn't exist, you can open a new issue using the [issue form](.github/issue_form.md).
+1. For questions regarding the code shared in this repo please check the FAQ first and [search if an issue already exists](../../issues). If a related issue doesn't exist, you can open a new issue using the [issue form](../../issues/new/choose).
 2. For application or device specific questions look for common solutions and knowledge articles on the [Sick Support Portal](https://support.sick.com/). If your question is not answered there, open a ticket on the [Sick Support Portal](https://support.sick.com/).
 
 ## Keywords

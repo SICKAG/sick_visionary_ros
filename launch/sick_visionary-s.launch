@@ -3,11 +3,16 @@
 
   <arg name="camera" default="sick_visionary_s" />
 
-  <node pkg="sick_visionary_ros" type="sick_visionary_s_node" name="$(arg camera)" output="screen" >
+  <node pkg="sick_visionary_ros" type="sick_visionary_s_node" name="$(arg camera)" output="screen">
     <!-- IP address of the Visionary-S device, default: 192.168.1.10 -->
     <param name="remote_device_ip" value="192.168.1.10" />
-
     <param name="frame_id" value="camera" />
+    <param name="enable_z" value="true" />
+    <param name="enable_statemap" value="true" />
+    <param name="enable_rgba" value="true" />
+    <param name="enable_points" value="true" />
+    <param name="desired_frequency" value="15.0" /> <!--device max freq is 30FPS-->
+
   </node>
 
 </launch>
