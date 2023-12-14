@@ -1,6 +1,11 @@
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Changelog for package sick_visionary_ros
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1.1.1 (2023-12-14)
+------------------
+* fix: bump package.xml version 
+* add tags to package.xml for ros-index
+
 1.1.0 (2023-12-08)
 ------------------
 * add ROS diagnostics feature to check topic publishing frequencies (Contribution by 4am-robotics)
