@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>sick_visionary_ros</name>
-  <version>1.1.1</version>
+  <version>1.1.2</version>
   <description>Open source drivers for the SICK Visionary-S 3D camera and Visionary-T Mini 3D-ToF camera.</description>
   <license>Unlicense</license>
   <maintainer email="techsupport3dsnapshot@sick.de">SICK AG TechSupport 3D Snapshot</maintainer>

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.8)
 
 project(sick_visionary_ros
-        VERSION 0.1.0
+        VERSION 1.1.2
         LANGUAGES CXX)
 
 find_package(catkin REQUIRED COMPONENTS
@@ -52,14 +52,14 @@ target_link_libraries(sick_visionary_t_mini_node
   sick_visionary_cpp_shared
   ${catkin_LIBRARIES}
   ${OpenCV_LIBS}
-  ${PCL_LIBRARY_DIRS}
+  ${PCL_LIBRARY}
 )
 
 target_link_libraries(sick_visionary_s_node
   sick_visionary_cpp_shared
   ${catkin_LIBRARIES}
   ${OpenCV_LIBS}
-  ${PCL_LIBRARY_DIRS}
+  ${PCL_LIBRARY}
 )
 
 add_definitions(${PCL_DEFINITIONS})
