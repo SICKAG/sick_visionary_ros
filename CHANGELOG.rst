@@ -1,9 +1,15 @@
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Changelog for package sick_visionary_ros
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1.1.2 (2024-02-06)
+------------------
+* update sick_visionary_cpp_shread to fix CoLa2 session timeout
+* bump package.xml version
+* fix CMakeLists.txt used wrong PCL LIBRARY variable, fix project version
+
 1.1.1 (2023-12-14)
 ------------------
-* fix: bump package.xml version 
+* fix: bump package.xml version
 * add tags to package.xml for ros-index
 
 1.1.0 (2023-12-08)
